@@ -4,7 +4,7 @@
 #include <err.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
-#include <string.h>   
+#include <string.h>
 
 static int verbose;
 
@@ -47,7 +47,7 @@ int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *aad,
 	if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
 
 	/* Initialise the encryption operation. */
-	if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_128_gcm(), NULL, NULL, NULL))
+	if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, NULL, NULL))
 		handleErrors();
 
 	/* Set IV length if default 12 bytes (96 bits) is not appropriate */
@@ -104,7 +104,7 @@ int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *aad,
 	if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
 
 	/* Initialise the decryption operation. */
-	if(!EVP_DecryptInit_ex(ctx, EVP_aes_128_gcm(), NULL, NULL, NULL))
+	if(!EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, NULL, NULL))
 		handleErrors();
 
 	/* Set IV length. Not necessary if this is 12 bytes (96 bits) */
@@ -240,8 +240,8 @@ static void encode_wrapper(int argc, char *argv[])
 				errx(1, "-key: missing file name");
 			key = read_file(argv[i], &key_size);
 			assert(key);
-			if (key_size != 16)
-				errx(1, "-key: key size has to be 16 bytes");
+			if (key_size != 32)
+				errx(1, "-key: key size has to be 32 bytes");
 		}
 		if (!strcmp(argv[i], "-iv")) {
 			i++;
@@ -270,7 +270,7 @@ static void encode_wrapper(int argc, char *argv[])
 
 	out_size = encrypt(in, in_size, "", 0, key, iv, iv_size, out, tag);
 	if (out_size != in_size)
-	       errx(1, "Encrypt failed");	
+	       errx(1, "Encrypt failed");
 
 	VV(printf("Ciphertext:\n"););
 	VV(BIO_dump_fp(stdout, out, out_size););
@@ -326,8 +326,8 @@ static void decode_wrapper(int argc, char *argv[])
 				errx(1, "-key: missing file name");
 			key = read_file(argv[i], &key_size);
 			assert(key);
-			if (key_size != 16)
-				errx(1, "-key: key size has to be 16 bytes");
+			if (key_size != 32)
+				errx(1, "-key: key size has to be 32 bytes");
 		}
 		if (!strcmp(argv[i], "-iv")) {
 			i++;
@@ -369,7 +369,7 @@ static void decode_wrapper(int argc, char *argv[])
 
 	out_size = decrypt(in, in_size, "", 0, tag, key, iv, iv_size, out);
 	if (out_size != in_size)
-	       errx(1, "Decrypt failed");	
+	       errx(1, "Decrypt failed");
 
 	VV(printf("Decrypted text:\n"););
 	VV(BIO_dump_fp(stdout, out, out_size););
@@ -395,7 +395,7 @@ int main(int argc, char *argv[])
 	int i;
 
 	OpenSSL_add_all_algorithms();
-	ERR_load_crypto_strings();	 
+	ERR_load_crypto_strings();
 
 	for (i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-v"))
